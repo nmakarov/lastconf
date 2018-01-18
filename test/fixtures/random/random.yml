@@ -1,0 +1,12 @@
+job: worker
+skill: medium
+
+color:
+  skin: white
+  hear: black
+
+fruits:
+    - Apple
+    - Orange
+    - Strawberry
+    - Mango
