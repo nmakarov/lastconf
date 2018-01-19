@@ -2,11 +2,11 @@
 
 > The ultimate configuration library, has it all in. Last one you ever going to use.
 
-The module takes care of configuration options discovery, parsing and merging
+The module takes care of configuration options discovery, parsing and merging. Just put your config files into the `config` folder – and you're done!
 
 global/local/prod/qa/etc. config files, environment variables, command line options, hardcoded and default values – all is taken care of.
 
-json, js, yaml, ini – pick your configuration language and `lastconf` will just take it.
+json, js, json5, yaml, ini – pick your configuration language and `lastconf` will just take it.
 
 
 ## Installation
@@ -20,8 +20,8 @@ npm i lastconf -S
 config/config.yaml
 ```yaml
 database:
-	host: awsdbexample.org
-	port: 4321
+  host: dbhost.example.org
+  port: 4321
 ```
 
 ```javascript
@@ -31,16 +31,26 @@ console.info("database host:", conf.get("database.host"));
 
 ```
 
+Typicaly your `config` folder should include the following:
+- config.json5 - some defaults
+- config.development.json5 – overwrites pointers to db/api/whatever remote services to local ones
+- config.test.json5 – a set of variables used for testing
+- config.local.json5 - totally local stuff, this file should never be checked in.
+
+Note: if environment is explicitly set (say, NODE_ENV=TEST), local settings from `config.local.json5` are ignored. But vars from environment and command line still takes precedence.
+
 ## API
 
 ```javascript
 const conf = require("lastconf")(options, hardcodedValuesObject);
 ```
-where options are:
-- default – object with initial params, likely to be overwritten.
-- separator - what separates multi-level keys, like in `databases.ex1.host`. Default is `.`
-- environmentSeparator - same as above, but for the environment vars. Default is `__`
-- dir – folder where all config files supposed to be located. Default is `./config`
+where `options` are:
+- *default* – object with initial params, likely to be overwritten.
+- *separator* - what separates multi-level keys, like in `databases.ex1.host`. Default is `.`
+- *environmentSeparator* - same as above, but for the environment vars. Default is `__`
+- *dir* – folder where all config files supposed to be located. Default is `./config`
+
+and `hardcodedValuesObject` is just a hash that will overwrite anything.
 
 ## Rules
 
@@ -55,13 +65,13 @@ where options are:
 - Note to environment vars: unless configured otherwise `hyperconfig` will try to extract only keys that have extracted already.
 
 - Files in order:
-	- config.schema -- validation (Joe?)
 	- config
 	- config.<NODE_ENV>
 	- config.local -- never checked in.
 
 - Extensions for each file to try in order:
 	- json
+	- json5
 	- js
 	- yaml
 	- ini
@@ -75,10 +85,11 @@ where options are:
 
 ## todo
 - allowed keys param for environment vars – explicitly specify what vars are allowed there
-- .ini parsing
 - extra file names to discovery and parse
 - `.has` function
 - validation or at least mandatory params check.
+- debugging of what file was and was not discovered
+- native error handling&reporting while parsing files – should informatively tell where the error was.
 
 ## Other npms with similar functionality in no particular order:
 - nconf

@@ -1,5 +1,7 @@
 const _ = require("underscore");
-const Yaml = require('js-yaml');
+const Yaml = require("js-yaml");
+const JSON5 = require("json5");
+const INI = require("ini");
 const fs   = require('fs');
 
 module.exports = hyperconfig;
@@ -10,6 +12,7 @@ function hyperconfig(options, hardcoded={}) {
 	const separator = options.separator || ".";
 	const envSeparator = options.environmentSeparator || "__";
 	const configFolder = options.dir || "./config";
+	const isEnv = !! process.env.NODE_ENV;
 	const env = process.env.NODE_ENV || "development";
 
 	const config = options.defaults || {};
@@ -116,17 +119,66 @@ function hyperconfig(options, hardcoded={}) {
 		return json;
 	}
 
+	const loadJson5 = function (name, dir) {
+		dir = dir || configFolder;
+		let json5 = {};
+		try {
+			json5 = fs.readFileSync(dir + "/" + name + ".json5", "utf8")
+		} catch (e) {
+			if (e.code === "ENOENT") {
+				return {};
+			}
+		}
+
+		let json = {};
+		try {
+			json = JSON5.parse(json5);
+		} catch (e) {
+			return {};
+		}
+		return json;
+	}
+
+	const loadIni = function (name, dir) {
+		dir = dir || configFolder;
+		let ini = {};
+		try {
+			ini = fs.readFileSync(dir + "/" + name + ".ini", "utf8")
+		} catch (e) {
+			if (e.code === "ENOENT") {
+				return {};
+			}
+		}
+
+		let json = {};
+		try {
+			json = INI.parse(ini);
+		} catch (e) {
+			return {};
+		}
+		return json;
+	}
+
 	_.extend(config, loadJSON("config"));
+	_.extend(config, loadJson5("config"));
 	_.extend(config, loadJS("config"));
 	_.extend(config, loadYaml("config"));
+	_.extend(config, loadIni("config"));
 
 	_.extend(config, loadJSON("config." + env));
+	_.extend(config, loadJson5("config." + env));
 	_.extend(config, loadJS("config." + env));
 	_.extend(config, loadYaml("config." + env));
+	_.extend(config, loadIni("config." + env));
 
-	_.extend(config, loadJSON("config.local"));
-	_.extend(config, loadJS("config.local"));
-	_.extend(config, loadYaml("config.local"));
+	// use local overrides only if the NODE_ENV was not set:
+	if ( ! isEnv) {
+		_.extend(config, loadJSON("config.local"));
+		_.extend(config, loadJson5("config.local"));
+		_.extend(config, loadJS("config.local"));
+		_.extend(config, loadYaml("config.local"));
+		_.extend(config, loadIni("config.local"));
+	}
 
 	_.extend(config, checkEnv(flattenKeys(config, envSeparator)));
 
@@ -135,7 +187,7 @@ function hyperconfig(options, hardcoded={}) {
 	const json = () => config;
 
 	return {
-		get, set, json, flattenKeys, loadJSON, loadJS, loadYaml
+		get, set, json, flattenKeys, loadJSON, loadJS, loadYaml, loadJson5, loadIni
 	}
 }
 

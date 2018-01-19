@@ -1,0 +1,7 @@
+{
+	some: "json5 file",
+	outer: {
+		inner: "ok"
+	},
+	with: "trailing comma",
+}

@@ -1,6 +1,6 @@
 {
   "name": "lastconf",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "The ultimate configuration, has it all in.",
   "main": "lastconf.js",
   "scripts": {
@@ -17,9 +17,14 @@
     "api",
     "configuration",
     "environment",
-    "webdev"
+    "webdev",
+    "yaml",
+    "yml",
+    "json",
+    "json5",
+    "ini"
   ],
-  "author": "Nick Makarov nmakarov@gmail.com",
+  "author": "Nick Makarov <nmakarov@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/nmakarov/lastconf/issues"
@@ -31,7 +36,9 @@
     "should": "^13.2.1"
   },
   "dependencies": {
+    "ini": "^1.3.5",
     "js-yaml": "^3.10.0",
+    "json5": "^0.5.1",
     "underscore": "^1.8.3"
   }
 }
