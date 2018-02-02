@@ -165,20 +165,23 @@ function hyperconfig(options, hardcoded={}) {
 	_.extend(config, loadYaml("config"));
 	_.extend(config, loadIni("config"));
 
+	_.extend(config, loadJSON("config.local"));
+	_.extend(config, loadJson5("config.local"));
+	_.extend(config, loadJS("config.local"));
+	_.extend(config, loadYaml("config.local"));
+	_.extend(config, loadIni("config.local"));
+
 	_.extend(config, loadJSON("config." + env));
 	_.extend(config, loadJson5("config." + env));
 	_.extend(config, loadJS("config." + env));
 	_.extend(config, loadYaml("config." + env));
 	_.extend(config, loadIni("config." + env));
 
-	// use local overrides only if the NODE_ENV was not set:
-	if ( ! isEnv) {
-		_.extend(config, loadJSON("config.local"));
-		_.extend(config, loadJson5("config.local"));
-		_.extend(config, loadJS("config.local"));
-		_.extend(config, loadYaml("config.local"));
-		_.extend(config, loadIni("config.local"));
-	}
+	_.extend(config, loadJSON("config." + env + ".local"));
+	_.extend(config, loadJson5("config." + env + ".local"));
+	_.extend(config, loadJS("config." + env + ".local"));
+	_.extend(config, loadYaml("config." + env + ".local"));
+	_.extend(config, loadIni("config." + env + ".local"));
 
 	_.extend(config, checkEnv(flattenKeys(config, envSeparator)));
 

@@ -59,15 +59,31 @@ and `hardcodedValuesObject` is just a hash that will overwrite anything.
 	- `options.defaults` parameter
 	- configs from files
 	- environment vars
-	- command line iptions
+	- command line options
 	- `hardcoded` parameters
 
 - Note to environment vars: unless configured otherwise `hyperconfig` will try to extract only keys that have extracted already.
 
 - Files in order:
 	- config
-	- config.<NODE_ENV>
 	- config.local -- never checked in.
+	- config.<NODE_ENV>
+	- config.<NODE_ENV>.local -- never checked in.
+
+i.e, for the `development`:
+* config.json
+* config.local.json
+* config.development.json
+* config.development.local.json
+
+and for `test`:
+* config.json
+* config.local.json
+* config.test.json
+* config.test.local.json
+
+as it is seen, the first two configs are common, and the last two differ.
+
 
 - Extensions for each file to try in order:
 	- json
@@ -90,6 +106,7 @@ and `hardcodedValuesObject` is just a hash that will overwrite anything.
 - validation or at least mandatory params check.
 - debugging of what file was and was not discovered
 - native error handling&reporting while parsing files – should informatively tell where the error was.
+- add a param that specify config file name to process in addition to standard ones
 
 ## Other npms with similar functionality in no particular order:
 - nconf
