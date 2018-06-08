@@ -1,4 +1,5 @@
-const _ = require("underscore");
+// const _ = require("underscore");
+const _ = require("lodash");
 const Yaml = require("js-yaml");
 const JSON5 = require("json5");
 const INI = require("ini");
@@ -159,33 +160,33 @@ function hyperconfig(options, hardcoded={}) {
 		return json;
 	}
 
-	_.extend(config, loadJSON("config"));
-	_.extend(config, loadJson5("config"));
-	_.extend(config, loadJS("config"));
-	_.extend(config, loadYaml("config"));
-	_.extend(config, loadIni("config"));
+	_.merge(config, loadJSON("config"));
+	_.merge(config, loadJson5("config"));
+	_.merge(config, loadJS("config"));
+	_.merge(config, loadYaml("config"));
+	_.merge(config, loadIni("config"));
 
-	_.extend(config, loadJSON("config.local"));
-	_.extend(config, loadJson5("config.local"));
-	_.extend(config, loadJS("config.local"));
-	_.extend(config, loadYaml("config.local"));
-	_.extend(config, loadIni("config.local"));
+	_.merge(config, loadJSON("config.local"));
+	_.merge(config, loadJson5("config.local"));
+	_.merge(config, loadJS("config.local"));
+	_.merge(config, loadYaml("config.local"));
+	_.merge(config, loadIni("config.local"));
 
-	_.extend(config, loadJSON("config." + env));
-	_.extend(config, loadJson5("config." + env));
-	_.extend(config, loadJS("config." + env));
-	_.extend(config, loadYaml("config." + env));
-	_.extend(config, loadIni("config." + env));
+	_.merge(config, loadJSON("config." + env));
+	_.merge(config, loadJson5("config." + env));
+	_.merge(config, loadJS("config." + env));
+	_.merge(config, loadYaml("config." + env));
+	_.merge(config, loadIni("config." + env));
 
-	_.extend(config, loadJSON("config." + env + ".local"));
-	_.extend(config, loadJson5("config." + env + ".local"));
-	_.extend(config, loadJS("config." + env + ".local"));
-	_.extend(config, loadYaml("config." + env + ".local"));
-	_.extend(config, loadIni("config." + env + ".local"));
+	_.merge(config, loadJSON("config." + env + ".local"));
+	_.merge(config, loadJson5("config." + env + ".local"));
+	_.merge(config, loadJS("config." + env + ".local"));
+	_.merge(config, loadYaml("config." + env + ".local"));
+	_.merge(config, loadIni("config." + env + ".local"));
 
-	_.extend(config, checkEnv(flattenKeys(config, envSeparator)));
+	_.merge(config, checkEnv(flattenKeys(config, envSeparator)));
 
-	_.extend(config, hardcoded);
+	_.merge(config, hardcoded);
 
 	const json = () => config;
 
