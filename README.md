@@ -31,7 +31,7 @@ console.info("database host:", conf.get("database.host"));
 
 ```
 
-i.e. to initialize config call exported object upon require as a function or call `init()` on it later.
+i.e. to initialize config call exported object upon require as a function or call `init(optionalOptionsObject, optionalHardcodedObject)` on it later.
 
 Typicaly your `config` folder should include the following:
 - config.json5 - some defaults
@@ -47,26 +47,32 @@ Note: if environment is explicitly set (say, NODE_ENV=TEST), local settings from
 const conf = require("lastconf")(options, hardcodedValuesObject);
 ```
 where `options` are:
+
 - *default* – object with initial params, likely to be overwritten.
+
 - *separator* - what separates multi-level keys, like in `databases.ex1.host`. Default is `.`
+
 - *environmentSeparator* - same as above, but for the environment vars. Default is `__`
-- *folder* – folder where all config files supposed to be located. Default is `config`
-- *location* - where *folder* fith config files to be found. By default it is where the script is run from (project, top level folder). If it is *script*, then main script location-related. I.e. if your script is located in some sub-folder, *config* folder should be at the same level.
+- *folder* – directory where all config files supposed to be located. Default is `config`. If *location* option is not specified, path will be relative to where teh script is run from. Can be compound, as "src/config".
+
+- *location* - where *folder* with config files to be found. By default it is where the script is run from (project, top level folder). If it is *script*, then main script location-related. I.e. if your script is located in some sub-folder, *config* folder should be at the same level.
+
 - *debug* a bit of info as to where the *config* files are read from and which ones are read and in what order.
 
-and `hardcodedValuesObject` is just a hash that will overwrite anything.
+and `hardcodedValuesObject` is just a hash that will overwrite anything. Useful for quick'n'dirty temporary changes to test something.
 
 ## Rules
 
-- All keys internally a lowerkeyed. As such, `.get("SomeKey")` function can take whatever, but turn the key to lowercase.
+- All keys internally a lowerkeyed. As such, `.get("SomeKey")` function can take whatever, but turn the key to lowercase. So, "SOMEKEY", "sOmEkEy" and "someKey" will be treated as "somekey".
+
 - Priority sequence:
 	- `options.defaults` parameter
 	- configs from files
-	- command line options
-	- `hardcoded` parameters
+	- command line options (not implemented, not sure if anyone really needs it)
 	- environment vars
+	- `hardcoded` parameters
 
-- Note to environment vars: unless configured otherwise `hyperconfig` will try to extract only keys that have extracted already.
+- Note to environment vars: `lastconfig` will attempt to only extract keys that have been extracted and placed into config object already. I.e. if you plan to use "DATABASE" env var, specify it in one of the configs or in `defaults` parameter, as `{ database: null }`.
 
 - Files in order:
 	- config
@@ -148,7 +154,7 @@ which is essentially the same as `config.get("some.nested"), really`
 ## resolving paths
 The same config can be used by different apps from different folders. And if
 some config parameter needs to specify some relative folder, it might be a problem.
-it might be solved by making a relative path using `__dirname` in the .js config file
+it might be solved by making a relative path (relative to the config files location) using `__dirname` in the .js config file
 ```
 	...
 	directory: __dirname + '/../db/migrations'
@@ -161,6 +167,7 @@ or by using a special resolvable placeholder `%%%configFolder%%%`:
     directory: '%%%configFolder%%%/../db/migrations',
     ...
 ```
+which works for every other type of configs – .json, .yaml etc.
 
 ## real world example
 
@@ -217,11 +224,11 @@ nodemon servers/server.js
 
 - validation or at least mandatory params check.
 
-- native error handling&reporting while parsing files – should informatively tell where the error was (kinda works for `.js` files)
+- native error handling&reporting while parsing files – should informatively tell where the error was (_kinda works for `.js` files now_)
 
-- add a param that specify config file name to process in addition to standard ones (really needed?)
+- add a param that specify config file name to process in addition to standard ones (_really needed?_)
 
-- `.has` function (really needed?)
+- `.has` function (_really needed?_)
 
 
 ## Other npms with similar functionality in no particular order:
