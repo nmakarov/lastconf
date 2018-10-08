@@ -1,7 +1,7 @@
 var should = require("should");
 var expect = require("expect");
 
-const flattenKeys = require("../lastconf")().flattenKeys;
+const flattenKeys = require("../lastconf").flattenKeys;
 
 describe("flattenKeys", () => {
 	it("works on a simple arrays", () => {
