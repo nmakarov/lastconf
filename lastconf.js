@@ -26,6 +26,7 @@ const d = (msg) => {
 class ParseError extends Error {}
 
 const lastconf = (opts, hardcoded = {}) => lastconf.init(opts, hardcoded);
+lastconf.env = process.env.NODE_ENV || "development";
 
 lastconf.init = (opts, hardcoded = {}) => {
 	options = opts || {};
