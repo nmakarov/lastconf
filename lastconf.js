@@ -1,56 +1,50 @@
-// const _ = require("underscore");
+/* eslint-disable import/no-dynamic-require, global-require */
+
 const _ = require("lodash");
 const Yaml = require("js-yaml");
 const JSON5 = require("json5");
 const INI = require("ini");
-const fs   = require('fs');
+const fs = require("fs");
 const path = require("path");
-
-const resolve = require('path').resolve;
-const dirname = require('path').dirname;
 
 let config = {};
 let options = null;
 let separator = null;
 let envSeparator = null;
 let configFolder = null;
-let isEnv = null;
 let env = null;
 let debug = false;
 
+const logger = console;
+
 const d = (msg) => {
 	if (debug) {
-		console.info("[debug]", msg);
+		logger.info("[debug]", msg);
 	}
 };
 
-const lastconf = function(opts, hardcoded={}) {
-	return lastconf.init(opts, hardcoded);
-}
+class ParseError extends Error {}
 
-lastconf.init = function(opts, hardcoded={}) {
+const lastconf = (opts, hardcoded = {}) => lastconf.init(opts, hardcoded);
 
+lastconf.init = (opts, hardcoded = {}) => {
 	options = opts || {};
 	debug = options.debug || false;
 	separator = options.separator || ".";
 	envSeparator = options.environmentSeparator || "__";
 	// `options.location` might be specified as "script" or default whatever
 
-	const location = 
-		options.location === 'script' ? path.dirname(process.mainModule.filename) : "./";
-	configFolder = path.resolve(location + "/" + (options.folder || "config"));
-	if (debug) {
-		console.info("[debug] config files will be read from", configFolder);
-	}
-	isEnv = !! process.env.NODE_ENV;
+	const location = 		options.location === "script" ? path.dirname(process.mainModule.filename) : "./";
+	configFolder = path.resolve(`${location}/${options.folder || "config"}`);
+	d("[debug] config files will be read from", configFolder);
 	env = process.env.NODE_ENV || "development";
 
 	config = options.defaults || {};
 
-	const checkEnv = function (allowedKeys=[]) {
-		let res = {};
-		Object.keys(process.env).forEach(key => {
-			let k = key.toLowerCase();
+	const checkEnv = (allowedKeys = []) => {
+		const res = {};
+		Object.keys(process.env).forEach((key) => {
+			const k = key.toLowerCase();
 			if (allowedKeys.indexOf(k) !== -1) {
 				d(`from environment: key "${k}"`);
 				lastconf.set(k, process.env[key], envSeparator);
@@ -58,7 +52,6 @@ lastconf.init = function(opts, hardcoded={}) {
 		});
 		return res;
 	};
-
 
 
 	_.merge(config, lastconf.loadJSON("config"));
@@ -71,16 +64,16 @@ lastconf.init = function(opts, hardcoded={}) {
 	_.merge(config, lastconf.loadJS("config.local"));
 	_.merge(config, lastconf.loadYaml("config.local"));
 	_.merge(config, lastconf.loadIni("config.local"));
-	_.merge(config, lastconf.loadJSON("config." + env));
-	_.merge(config, lastconf.loadJson5("config." + env));
-	_.merge(config, lastconf.loadJS("config." + env));
-	_.merge(config, lastconf.loadYaml("config." + env));
-	_.merge(config, lastconf.loadIni("config." + env));
-	_.merge(config, lastconf.loadJSON("config." + env + ".local"));
-	_.merge(config, lastconf.loadJson5("config." + env + ".local"));
-	_.merge(config, lastconf.loadJS("config." + env + ".local"));
-	_.merge(config, lastconf.loadYaml("config." + env + ".local"));
-	_.merge(config, lastconf.loadIni("config." + env + ".local"));
+	_.merge(config, lastconf.loadJSON(`config.${env}`));
+	_.merge(config, lastconf.loadJson5(`config.${env}`));
+	_.merge(config, lastconf.loadJS(`config.${env}`));
+	_.merge(config, lastconf.loadYaml(`config.${env}`));
+	_.merge(config, lastconf.loadIni(`config.${env}`));
+	_.merge(config, lastconf.loadJSON(`config.${env}.local`));
+	_.merge(config, lastconf.loadJson5(`config.${env}.local`));
+	_.merge(config, lastconf.loadJS(`config.${env}.local`));
+	_.merge(config, lastconf.loadYaml(`config.${env}.local`));
+	_.merge(config, lastconf.loadIni(`config.${env}.local`));
 
 	_.merge(config, checkEnv(lastconf.flattenKeys(config, envSeparator)));
 
@@ -94,172 +87,161 @@ lastconf.init = function(opts, hardcoded={}) {
 };
 
 
-lastconf.json = (root) => root ? lastconf.get(root) : config;
+lastconf.json = root => (root ? lastconf.get(root) : config);
 
-lastconf.get = function (key, sep, c) {
-		sep = sep || separator;
-		c = c || config;
-		let pieces = key.split(sep);
-		while(pieces.length) {
-			let piece = pieces.shift();
+lastconf.get = (key, sep = separator, c = config) => {
+	let cc = c;
+	const pieces = key.split(sep);
+	while (pieces.length) {
+		const piece = pieces.shift();
+		cc = cc[piece];
+	}
+	return cc;
+};
+
+lastconf.set = (key, value, sep = separator) => {
+	const pieces = key.split(sep);
+	let c = config;
+	while (pieces.length) {
+		const piece = pieces.shift();
+		if (pieces.length) {
+			c[piece] = c[piece] || {};
 			c = c[piece];
+		} else {
+			c[piece] = value;
 		}
-		return c;
-	};
-
-lastconf.set = function (key, value, sep) {
-		sep = sep || separator;
-
-		let pieces = key.split(sep);
-		let c = config;
-		while(pieces.length) {
-			let piece = pieces.shift();
-			if (pieces.length) {
-				c[piece] = c[piece] || {};
-				c = c[piece];
-			} else {
-				c[piece] = value;
-			}
-		}
-		return c;
 	}
+	return c;
+};
 
-	lastconf.loadJSON = function (name, dir) {
-		dir = dir || configFolder;
-		let json = {};
-		const file = dir + "/" + name + ".json";
-		try {
-			json = require(file);
-			d(`file loaded: "${file}"`);
-		} catch (e) {
-			// console.dir(e);
-			if (e.code === "MODULE_NOT_FOUND") {
-				return {};
-			}
-			// likely, syntax error is json file
-			throw " " + e;
+lastconf.loadJSON = (name, dir = configFolder) => {
+	let json = {};
+	const file = `${dir}/${name}.json`;
+	try {
+		json = require(file);
+		d(`file loaded: "${file}"`);
+	} catch (e) {
+		if (e.code === "MODULE_NOT_FOUND") {
+			return {};
 		}
-		return json;
+		// likely, syntax error is json file
+		throw new ParseError(` ${e}`);
 	}
+	return json;
+};
 
-	lastconf.loadJS = function (name, dir) {
-		dir = dir || configFolder;
-		let js = {};
-		const file = dir + "/" + name + ".js";
-		try {
-			js = require(file);
-			d(`file loaded: "${file}"`);
-		} catch (e) {
-			// console.dir(e);
-			if (e.code === "MODULE_NOT_FOUND") {
-				return {};
-			}
-			console.info(`>> not caught:`, e.code);
+lastconf.loadJS = (name, dir = configFolder) => {
+	let js = {};
+	const file = `${dir}/${name}.js`;
+	try {
+		js = require(file);
+		d(`file loaded: "${file}"`);
+	} catch (e) {
+		if (e.code === "MODULE_NOT_FOUND") {
+			return {};
+		}
+		// syntax error in the source file, perhaphs
+		throw new ParseError(` ${e}`);
+	}
+	return js;
+};
+
+lastconf.loadYaml = (name, dir = configFolder) => {
+	let yaml = {};
+	const file = `${dir}/${name}.yaml`;
+	try {
+		yaml = fs.readFileSync(file, "utf8");
+		d(`file loaded: "${file}"`);
+	} catch (e) {
+		if (e.code !== "ENOENT") {
 			throw e;
 		}
-		return js;
-	}
 
-	lastconf.loadYaml = function (name, dir) {
-		dir = dir || configFolder;
-		let yaml = {};
-		const file = dir + "/" + name + ".yaml";
 		try {
-			yaml = fs.readFileSync(file, "utf8")
-			d(`file loaded: "${file}"`);
-		} catch (e) {
-			if (e.code !== "ENOENT") {
-				throw e;
-			}
-
-			try {
-				yaml = fs.readFileSync(dir + "/" + name + ".yml", "utf8")
-			} catch (e) {
-				if (e.code === "ENOENT") {
-					return {};
-				}
-				throw e;
-			}
-		}
-
-		let json = {};
-		try {
-			json = Yaml.safeLoad(yaml);
-		} catch (e) {
-			return {};
-		}
-// console.info(json);
-		return json;
-	}
-
-	lastconf.loadJson5 = function (name, dir) {
-		dir = dir || configFolder;
-		const file = dir + "/" + name + ".json5";
-		let json5 = {};
-		try {
-			json5 = fs.readFileSync(file, "utf8")
-			d(`file loaded: "${file}"`);
-		} catch (e) {
-			if (e.code === "ENOENT") {
+			yaml = fs.readFileSync(`${dir}/${name}.yml`, "utf8");
+		} catch (ee) {
+			if (ee.code === "ENOENT") {
 				return {};
 			}
+			throw ee;
 		}
-
-		let json = {};
-		try {
-			json = JSON5.parse(json5);
-		} catch (e) {
-			return {};
-		}
-		return json;
 	}
 
-	lastconf.loadIni = function (name, dir) {
-		dir = dir || configFolder;
-		const file = dir + "/" + name + ".ini";
-		let ini = {};
-		try {
-			ini = fs.readFileSync(file, "utf8")
-			d(`file loaded: "${file}"`);
-		} catch (e) {
-			if (e.code === "ENOENT") {
-				return {};
-			}
-		}
+	let json = {};
+	try {
+		json = Yaml.safeLoad(yaml);
+	} catch (e) {
+		return {};
+	}
+	return json;
+};
 
-		let json = {};
-		try {
-			json = INI.parse(ini);
-		} catch (e) {
+lastconf.loadJson5 = (name, dir = configFolder) => {
+	const file = `${dir}/${name}.json5`;
+	let json5 = {};
+	try {
+		json5 = fs.readFileSync(file, "utf8");
+		d(`file loaded: "${file}"`);
+	} catch (e) {
+		if (e.code === "ENOENT") {
 			return {};
 		}
-		return json;
 	}
+
+	let json = {};
+	try {
+		json = JSON5.parse(json5);
+	} catch (e) {
+		return {};
+	}
+	return json;
+};
+
+lastconf.loadIni = (name, dir = configFolder) => {
+	const file = `${dir}/${name}.ini`;
+	let ini = {};
+	try {
+		ini = fs.readFileSync(file, "utf8");
+		d(`file loaded: "${file}"`);
+	} catch (e) {
+		if (e.code === "ENOENT") {
+			return {};
+		}
+	}
+
+	let json = {};
+	try {
+		json = INI.parse(ini);
+	} catch (e) {
+		return {};
+	}
+	return json;
+};
 
 // walks down the config and makes replacements of placeholders
-lastconf.resolvePaths = function (config) {
-	Object.keys(config).forEach(key => {
-		if (typeof(config[key]) === "object" && config[key]) {
-			lastconf.resolvePaths(config[key]);
-		} else if(typeof(config[key]) === "string" && config[key].includes("%%%configFolder%%%")) {
-			config[key] = path.resolve(config[key].replace("%%%configFolder%%%", configFolder));
+lastconf.resolvePaths = (conf) => {
+	Object.keys(conf).forEach((key) => {
+		if (typeof (conf[key]) === "object" && conf[key]) {
+			lastconf.resolvePaths(conf[key]);
+		} else if (typeof (conf[key]) === "string" && conf[key].includes("%%%configFolder%%%")) {
+			// eslint-disable-next-line no-param-reassign
+			conf[key] = path.resolve(conf[key].replace("%%%configFolder%%%", configFolder));
 		}
-	})
-}
+	});
+};
 
-lastconf.flattenKeys = function(config, separator="__", prefix = "") {
+lastconf.flattenKeys = (conf, sep = "__", prefix = "") => {
 	let res = [];
-	Object.keys(config).forEach(key => {
+	Object.keys(conf).forEach((key) => {
 		// guard: `null` is an object, but shouldn't be descended.
-		if (typeof(config[key]) === "object" && config[key]) {
-			res = _.union(res, lastconf.flattenKeys(config[key], separator, (prefix ? prefix + separator : "") + key.toLowerCase()));
+		if (typeof (conf[key]) === "object" && conf[key]) {
+			res = _.union(res, lastconf.flattenKeys(conf[key], sep, (prefix ? prefix + sep : "") + key.toLowerCase()));
 		} else {
-			res.push((prefix ? prefix + separator : "") + key.toLowerCase());
+			res.push((prefix ? prefix + sep : "") + key.toLowerCase());
 		}
 	});
 
 	return res;
-
-}
+};
 
 module.exports = lastconf;
