@@ -26,8 +26,6 @@ const d = (msg) => {
 class ParseError extends Error {}
 
 const lastconf = (opts, hardcoded = {}) => lastconf.init(opts, hardcoded);
-console.info(">> env outside init:", env);
-lastconf.env = env;
 
 lastconf.init = (opts, hardcoded = {}) => {
 	options = opts || {};
@@ -39,8 +37,7 @@ lastconf.init = (opts, hardcoded = {}) => {
 	const location = options.location === "script" ? path.dirname(process.mainModule.filename) : "./";
 	configFolder = path.resolve(`${location}/${options.folder || "config"}`);
 	d("[debug] config files will be read from", configFolder);
-	env = options.env || process.env.NODE_ENV || "development";
-	console.info(">> env inside init:", env);
+	lastconf.env = options.env || process.env.NODE_ENV || "development";
 
 	config = options.defaults || {};
 
@@ -67,16 +64,16 @@ lastconf.init = (opts, hardcoded = {}) => {
 	_.merge(config, lastconf.loadJS("config.local"));
 	_.merge(config, lastconf.loadYaml("config.local"));
 	_.merge(config, lastconf.loadIni("config.local"));
-	_.merge(config, lastconf.loadJSON(`config.${env}`));
-	_.merge(config, lastconf.loadJson5(`config.${env}`));
-	_.merge(config, lastconf.loadJS(`config.${env}`));
-	_.merge(config, lastconf.loadYaml(`config.${env}`));
-	_.merge(config, lastconf.loadIni(`config.${env}`));
-	_.merge(config, lastconf.loadJSON(`config.${env}.local`));
-	_.merge(config, lastconf.loadJson5(`config.${env}.local`));
-	_.merge(config, lastconf.loadJS(`config.${env}.local`));
-	_.merge(config, lastconf.loadYaml(`config.${env}.local`));
-	_.merge(config, lastconf.loadIni(`config.${env}.local`));
+	_.merge(config, lastconf.loadJSON(`config.${lastconf.env}`));
+	_.merge(config, lastconf.loadJson5(`config.${lastconf.env}`));
+	_.merge(config, lastconf.loadJS(`config.${lastconf.env}`));
+	_.merge(config, lastconf.loadYaml(`config.${lastconf.env}`));
+	_.merge(config, lastconf.loadIni(`config.${lastconf.env}`));
+	_.merge(config, lastconf.loadJSON(`config.${lastconf.env}.local`));
+	_.merge(config, lastconf.loadJson5(`config.${lastconf.env}.local`));
+	_.merge(config, lastconf.loadJS(`config.${lastconf.env}.local`));
+	_.merge(config, lastconf.loadYaml(`config.${lastconf.env}.local`));
+	_.merge(config, lastconf.loadIni(`config.${lastconf.env}.local`));
 
 	_.merge(config, checkEnv(lastconf.flattenKeys(config, envSeparator)));
 
