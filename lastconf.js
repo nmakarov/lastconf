@@ -26,6 +26,7 @@ const d = (msg) => {
 class ParseError extends Error {}
 
 const lastconf = (opts, hardcoded = {}) => lastconf.init(opts, hardcoded);
+console.info(">> env outside init:", env);
 lastconf.env = env;
 
 lastconf.init = (opts, hardcoded = {}) => {
@@ -39,6 +40,7 @@ lastconf.init = (opts, hardcoded = {}) => {
 	configFolder = path.resolve(`${location}/${options.folder || "config"}`);
 	d("[debug] config files will be read from", configFolder);
 	env = options.env || process.env.NODE_ENV || "development";
+	console.info(">> env inside init:", env);
 
 	config = options.defaults || {};
 
