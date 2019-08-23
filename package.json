@@ -1,6 +1,6 @@
 {
   "name": "lastconf",
-  "version": "1.4.4",
+  "version": "1.5.0",
   "description": "The ultimate configuration, has it all in.",
   "main": "lastconf.js",
   "scripts": {
